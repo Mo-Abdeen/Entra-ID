@@ -206,7 +206,7 @@ function Register-App {
 
 # ------------------- Script Start -------------------
 
-Write-Output "`n🚀 Starting App Registration..."
+Write-Output "`n Starting App Registration..."
 
 # Collect user inputs
 do {
@@ -250,7 +250,7 @@ if ($permissions.Count -eq 0) {
 $app = Register-App -appName $appName -permissions $permissions -authType $authType -certificatePath $certificatePath
 
 if ($app) {
-    Write-Output "`n🎉 Application successfully registered!"
+    Write-Output "`n Application successfully registered!"
     Write-Output "ClientId: $($app.ClientId)"
     Write-Output "TenantId: $($app.TenantId)"
 
