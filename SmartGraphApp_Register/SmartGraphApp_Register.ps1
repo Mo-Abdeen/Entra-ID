@@ -49,32 +49,32 @@ function Get-GraphPermissionIdInteractive {
     $allPermissions = $graphSP.AppRoles | Where-Object { $_.AllowedMemberTypes -contains "Application" }
 
     while ($true) {
-        $permissionName = Read-Host "🔹 Enter the name of the required permission (e.g., 'SecurityIncident.Read.All')"
+        $permissionName = Read-Host " Enter the name of the required permission (e.g., 'SecurityIncident.Read.All')"
 
         # Exact match
         $match = $allPermissions | Where-Object { $_.Value -eq $permissionName }
 
         if ($match) {
-            Write-Host "✅ Found permission: $($match.Value)"
+            Write-Host " Found permission: $($match.Value)"
             return @{
                 Id = $match.Id
                 DisplayName = $match.Value
             }
         }
         else {
-            Write-Warning "❌ No exact match found. Searching for similar permissions..."
+            Write-Warning " No exact match found. Searching for similar permissions..."
 
             $wildcardPattern = "*" + ($permissionName -replace '\.', '*') + "*"
 
             $suggestions = $allPermissions | Where-Object { $_.Value -like $wildcardPattern } | Select-Object Id, Value
 
             if ($suggestions.Count -gt 0) {
-                Write-Host "💡 Did you mean:"
+                Write-Host " Did you mean:"
                 for ($i = 0; $i -lt $suggestions.Count; $i++) {
                     Write-Host "$($i + 1). $($suggestions[$i].Value)"
                 }
 
-                $choice = Read-Host "🔹 Select a number or press Enter to retype"
+                $choice = Read-Host " Select a number or press Enter to retype"
                 if ([string]::IsNullOrWhiteSpace($choice)) {
                     continue
                 }
@@ -82,22 +82,22 @@ function Get-GraphPermissionIdInteractive {
                     $index = [int]$choice - 1
                     if ($index -ge 0 -and $index -lt $suggestions.Count) {
                         $selected = $suggestions[$index]
-                        Write-Host "✅ Selected: $($selected.Value)"
+                        Write-Host " Selected: $($selected.Value)"
                         return @{
                             Id = $selected.Id
                             DisplayName = $selected.Value
                         }
                     }
                     else {
-                        Write-Warning "❌ Invalid number. Please try again."
+                        Write-Warning " Invalid number. Please try again."
                     }
                 }
                 else {
-                    Write-Warning "❌ Please enter a valid number."
+                    Write-Warning " Please enter a valid number."
                 }
             }
             else {
-                Write-Host "❌ No similar permissions found."
+                Write-Host " No similar permissions found."
             }
         }
     }
@@ -115,7 +115,7 @@ function Register-App {
     Connect-Graph -NoWelcome
 
     $app = New-MgApplication -DisplayName $appName
-    Write-Output "✅ Application created: AppId = $($app.AppId)"
+    Write-Output " Application created: AppId = $($app.AppId)"
 
     $clientId = $app.AppId
     $appObjectId = $app.Id
@@ -124,14 +124,14 @@ function Register-App {
 
     if ($authType -eq "cert") {
         if (-not (Test-Path $certificatePath)) {
-            throw "❌ Certificate path '$certificatePath' does not exist or is incorrect!"
+            throw " Certificate path '$certificatePath' does not exist or is incorrect!"
         }
 
         try {
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certificatePath)
         }
         catch {
-            throw "❌ Failed to load the certificate. Ensure it is a valid .cer or .pem file. Error: $_"
+            throw " Failed to load the certificate. Ensure it is a valid .cer or .pem file. Error: $_"
         }
 
 
@@ -167,7 +167,7 @@ function Register-App {
         }
     }
     else {
-        throw "❌ Invalid authentication method: $authType"
+        throw " Invalid authentication method: $authType"
     }
 
     $resourceAccessList = foreach ($perm in $permissions) {
@@ -184,7 +184,7 @@ function Register-App {
     Update-MgApplication -ApplicationId $appObjectId -RequiredResourceAccess @($requiredAccess) | Out-Null
 
     $sp = New-MgServicePrincipal -AppId $clientId
-    Write-Output "✅ Service Principal created: Id = $($sp.Id)"
+    Write-Output " Service Principal created: Id = $($sp.Id)"
 
     $graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
 
@@ -193,7 +193,7 @@ function Register-App {
             -PrincipalId $sp.Id `
             -ResourceId $graphSP.Id `
             -AppRoleId $perm.Id | Out-Null
-        Write-Output "✅ Assigned permission: $($perm.DisplayName)"
+        Write-Output " Assigned permission: $($perm.DisplayName)"
     }
 
     $tenantId = (Get-MgOrganization).Id
@@ -211,26 +211,26 @@ Write-Output "`n Starting App Registration..."
 
 # Collect user inputs
 do {
-    $appName = Read-Host "🔹 Please enter the App Name (only letters, numbers, hyphens allowed)"
+    $appName = Read-Host " Please enter the App Name (only letters, numbers, hyphens allowed)"
 
     if ($appName -match '[^a-zA-Z0-9\-]') {
-        Write-Warning "❌ The App Name can only contain letters, numbers, and hyphens. No special characters or spaces."
+        Write-Warning " The App Name can only contain letters, numbers, and hyphens. No special characters or spaces."
         $appName = $null
     }
 }
 while (-not $appName)
 
 do {
-    $authType = Read-Host "🔹 Use Secret or Certificate? (secret/cert)"
+    $authType = Read-Host " Use Secret or Certificate? (secret/cert)"
     if ($authType -ne "secret" -and $authType -ne "cert") {
-        Write-Warning "❌ Invalid input! Please enter 'secret' or 'cert'."
+        Write-Warning " Invalid input! Please enter 'secret' or 'cert'."
     }
 }
 while ($authType -ne "secret" -and $authType -ne "cert")
 
 $certificatePath = $null
 if ($authType -eq "cert") {
-    $certificatePath = Read-Host "🔹 Path to certificate (.cer, .crt, .pem)"
+    $certificatePath = Read-Host " Path to certificate (.cer, .crt, .pem)"
 }
 
 Connect-Graph -NoWelcome
@@ -240,12 +240,12 @@ do {
     if ($perm) {
         $permissions += $perm
     }
-    $more = Read-Host "🔹 Add another permission? (y/n)"
+    $more = Read-Host " Add another permission? (y/n)"
 }
 while ($more -eq "y")
 
 if ($permissions.Count -eq 0) {
-    throw "❌ No permissions selected. Script will exit."
+    throw " No permissions selected. Script will exit."
 }
 
 $app = Register-App -appName $appName -permissions $permissions -authType $authType -certificatePath $certificatePath
@@ -259,10 +259,11 @@ if ($app) {
         Write-Output "Certificate Thumbprint: $($app.AuthInfo.Thumbprint)"
     }
     elseif ($app.AuthInfo.Type -eq "Secret") {
-        Write-Output "🔑 Client Secret:"
+        Write-Output " Client Secret:"
         Write-Output "Value: $($app.AuthInfo.SecretValue)"
         Write-Output "Expires on: $($app.AuthInfo.SecretExpires)"
     }
 }
 
 Disconnect-MgGraph
+
