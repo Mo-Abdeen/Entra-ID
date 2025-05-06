@@ -1,20 +1,19 @@
 # ========================
-# Konfiguration
+# Configuration
 # ========================
-$tenantIdIntune  = ""  #Tenant ID der Intune-App
-$clientIdIntune  = ""  #Client ID der Intune-App
-$certAssetIntune = ""  #Zertifikat-Asset-Name der Intune-App in Azure Automation
+$tenantIdIntune  = ""  # Tenant ID of the Intune app
+$clientIdIntune  = ""  # Client ID of the Intune app
+$certAssetIntune = ""  # Certificate asset name of the Intune app in Azure Automation
 
+$tenantIdMail    = ""  # Tenant ID of the mail app
+$clientIdMail    = ""  # Client ID of the mail app
+$certAssetMail   = ""  # Certificate asset name of the mail app in Azure Automation
 
-$tenantIdMail    = ""  #Tenant ID der Mail-App 
-$clientIdMail    = ""  #Client ID der Mail-App 
-$certAssetMail   = ""  #Zertifikat-Asset-Name der Mail-App in Azure Automation
+$Sender          = ""  # Sender email address
+$Recipient       = ""  # Recipient email address
+$Organization    = ""  # Organization name (displayed in the report)
 
-$Sender          = ""  #Absender-E-Mail-Adresse
-$Recipient       = ""  #Empfänger-E-Mail-Adresse 
-$Organization    = ""  #Organisationsname (wird im Report angezeigt)
-
-$sendMailThreshold   = "30"  # Nur senden, wenn DaysLeft < 30   #Schwellwert in Tagen (z. B. 30), unter dem eine E-Mail ausgelöst wird
+$sendMailThreshold   = "30"  # Only send if DaysLeft < 30 (threshold in days, e.g., 30)
 
 Import-Module MSAL.PS -Force
 
@@ -27,7 +26,7 @@ $accessTokenIntune = $tokenIntune.AccessToken
 $headersIntune = @{ Authorization = "Bearer $accessTokenIntune"; "Content-Type" = "application/json" }
 
 # ========================
-# Graph-Abfragen Intune
+# Graph queries Intune
 # ========================
 $endpoints = @{
     VPP = "https://graph.microsoft.com/beta/deviceAppManagement/vppTokens"
@@ -40,7 +39,7 @@ foreach ($type in $endpoints.Keys) {
     try {
         $response = Invoke-RestMethod -Uri $endpoints[$type] -Headers $headersIntune -Method GET
     } catch {
-        Write-Warning "❌ Fehler bei ${type}: $_"
+        Write-Warning "❌ Error on ${type}: $_"
         continue
     }
 
@@ -129,7 +128,7 @@ $tableRows
     $headersMail = @{ Authorization = "Bearer $accessTokenMail"; "Content-Type" = "application/json" }
 
     # ========================
-    # E-Mail senden
+    # Send email
     # ========================
     $fileBytes = [System.IO.File]::ReadAllBytes($reportPath)
     $base64File = [Convert]::ToBase64String($fileBytes)
@@ -160,11 +159,11 @@ $tableRows
 
     try {
         Invoke-RestMethod -Uri $sendMailUrl -Headers $headersMail -Method POST -Body $jsonBody -ErrorAction Stop
-        Write-Host "✅ E-Mail erfolgreich gesendet." -ForegroundColor Green
+        Write-Host "✅ Email successfully sent." -ForegroundColor Green
     } catch {
-        Write-Error "❌ Fehler beim Senden der E-Mail: $($_.Exception.Message)"
+        Write-Error "❌ Error while sending email: $($_.Exception.Message)"
     }
 }
 else {
-    Write-Host "ℹ️ Keine Tokens unter $sendMailThreshold Tage – keine E-Mail gesendet."
+    Write-Host "ℹ️ No tokens below $sendMailThreshold days — no email sent."
 }
