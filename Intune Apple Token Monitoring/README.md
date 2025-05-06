@@ -1,99 +1,99 @@
 # Intune Apple Token Monitoring Script
 
-Dieses PowerShell-Script überwacht automatisch die Apple-Token in Microsoft Intune und sendet eine E-Mail-Benachrichtigung, wenn ein Token in weniger als einer definierten Anzahl von Tagen abläuft.
+This PowerShell script automatically monitors Apple tokens in Microsoft Intune and sends an email notification when any token is approaching its expiration date, based on a configurable threshold.
 
 ---
 
-## 📌 Zweck
+## 📌 Purpose
 
-Das Script prüft regelmäßig den Ablauf folgender Apple-Token in Intune:
+This script regularly checks the expiration status of the following Apple tokens in Microsoft Intune:
+
 - Apple VPP Tokens
 - Apple DEP Tokens
 - Apple MDM Push Certificate
 
-Es erstellt einen übersichtlichen HTML-Report mit den wichtigsten Informationen und verschickt diesen per E-Mail, wenn mindestens ein Token unter den konfigurierten Schwellwert fällt.
+It generates a clean HTML report summarizing the status and sends it via email if any token is nearing expiration.
 
 ---
 
-## ⚙️ Hauptfunktionen
+## ⚙️ Key Features
 
-- Abfrage der Token über die Microsoft Graph API (Beta)
-- Berechnung der verbleibenden Tage (`DaysLeft`) bis zum Ablauf
-- Erstellung eines HTML-Reports mit:
-  - Typ, Name, Apple ID, Ablaufdatum, Resttage, Status
-  - Status-Visualisierung: ✅ OK oder ❌ Critical
-- Automatischer E-Mail-Versand mit dem Report:
-  - Nur wenn mindestens ein Token unter dem Schwellwert liegt
-  - Report im Body und als Anhang
+- Queries tokens using the Microsoft Graph API (Beta)
+- Calculates remaining days (`DaysLeft`) until expiration
+- Generates an HTML report with:
+  - Type, Name, Apple ID, Expiration Date, Days Left, Status
+  - Visual status indicators: ✅ OK or ❌ Critical
+- Automated email delivery:
+  - Only if at least one token falls below the configured threshold
+  - Report included in the email body and as an attachment
 
 ---
 
-## 🛠 Voraussetzungen
+## 🛠 Prerequisites
 
-- Azure Automation Runbook oder lokale PowerShell-Umgebung
-- App-Registrierungen in Azure AD (Entra ID) in jedem überwachten Tenant:
-  - Intune App mit Berechtigungen:
+- Azure Automation Runbook or local PowerShell environment
+- Azure AD (Entra ID) App registrations in each monitored tenant:
+  - **Intune App** with permissions:
     - `DeviceManagementServiceConfig.Read.All`
     - `DeviceManagementApps.Read.All`
     - `Directory.Read.All`
-  - Mail-App mit Berechtigung:
+  - **Mail App** with permission:
     - `Mail.Send`
-- Zertifikat-Assets in Azure Automation:
+- Azure Automation certificate assets:
   - `CERT_NAME_INTUNE`
   - `CERT_NAME_MAIL`
-
-- Installierte PowerShell-Module:
+- Installed PowerShell module:
   - `MSAL.PS`
 
 ---
 
-## 🔑 Konfigurierbare Parameter
+## 🔑 Configurable Parameters
 
-| Parameter             | Beschreibung                                          |
-|-----------------------|-------------------------------------------------------|
-| `$tenantIdIntune`    | Tenant ID der Intune-App                              |
-| `$clientIdIntune`    | Client ID der Intune-App                              |
-| `$certAssetIntune`   | Zertifikat-Asset-Name der Intune-App in Azure Automation |
-| `$tenantIdMail`      | Tenant ID der Mail-App                                |
-| `$clientIdMail`      | Client ID der Mail-App                                |
-| `$certAssetMail`     | Zertifikat-Asset-Name der Mail-App in Azure Automation |
-| `$Sender`            | Absender-E-Mail-Adresse                               |
-| `$Recipient`         | Empfänger-E-Mail-Adresse                              |
-| `$Organization`      | Organisationsname (wird im Report angezeigt)          |
-| `$sendMailThreshold` | Schwellwert in Tagen (z. B. 30), unter dem eine E-Mail ausgelöst wird |
+| Parameter             | Description                                               |
+|-----------------------|-----------------------------------------------------------|
+| `$tenantIdIntune`    | Tenant ID of the Intune app                               |
+| `$clientIdIntune`    | Client ID of the Intune app                               |
+| `$certAssetIntune`   | Certificate asset name for the Intune app in Azure Automation |
+| `$tenantIdMail`      | Tenant ID of the mail app                                 |
+| `$clientIdMail`      | Client ID of the mail app                                 |
+| `$certAssetMail`     | Certificate asset name for the mail app in Azure Automation |
+| `$Sender`            | Sender email address                                      |
+| `$Recipient`         | Recipient email address                                   |
+| `$Organization`      | Organization name (shown in the report)                   |
+| `$sendMailThreshold` | Number of days left to trigger email notifications (e.g., 30) |
 
 ---
 
-## 📤 E-Mail-Ausgabe
+## 📤 Email Output
 
-- **Betreff:**  
+- **Subject:**  
   `<Organization> | Intune Token Report - YYYY-MM-DD`
 
 - **Body:**  
-  HTML-Tabelle mit allen Token-Informationen.
+  HTML table with all token details.
 
-- **Anhang:**  
-  HTML-Report-Datei (`IntuneTokenReport.html`).
-
----
-
-## 🛡 Statusdefinition im Report
-
-| Status       | Bedingung                 |
-|--------------|---------------------------|
-| ✅ OK       | DaysLeft ≥ 30             |
-| ❌ Critical | DaysLeft < 30             |
+- **Attachment:**  
+  HTML report file (`IntuneTokenReport.html`).
 
 ---
 
-## 🚀 Ablauf
+## 🛡 Status Indicators in Report
 
-1. Script läuft (z. B. täglich per Azure Automation).
-2. Holt Token-Informationen über Graph API.
-3. Berechnet Resttage bis Ablauf.
-4. Wenn mindestens 1 Token unter `$sendMailThreshold`:
-   - E-Mail mit Report wird verschickt.
-5. Wenn keine Token unter Schwellwert:
-   - Script beendet sich ohne E-Mail (es wird nur ein Logeintrag geschrieben).
+| Status       | Condition           |
+|--------------|---------------------|
+| ✅ OK       | DaysLeft ≥ 30       |
+| ❌ Critical | DaysLeft < 30       |
 
+---
 
+## 🚀 Script Workflow
+
+1. Script runs on a schedule (e.g., daily via Azure Automation).
+2. Retrieves token information from the Microsoft Graph API.
+3. Calculates days left until expiration.
+4. If at least one token is below the `$sendMailThreshold`:
+   - Sends an email with the report.
+5. If no tokens are below threshold:
+   - Exits quietly with a log entry (no email sent).
+
+---
